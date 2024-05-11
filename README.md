@@ -1,6 +1,6 @@
 # Sonido estéreo y ficheros WAVE
 
-## Nom i cognoms
+## Nom i cognoms: Yago Carballo Barroso
 
 ## El formato WAVE
 
@@ -189,11 +189,81 @@ pantalla, debe hacerse en formato *markdown*).
 
 ##### Código de `estereo2mono()`
 
+```python
+def estereo2mono(ficEste, ficMono, canal=2):
+    data, header = getData(ficEste)
+
+    if not header[6] == 2:
+        raise TypeError("El archivo debe ser estéreo.")
+
+    if canal == 0:
+        data_ficMono = data[0::2]
+
+    elif canal == 1:
+        data_ficMono = data[1::2]
+
+    elif canal == 2:
+        data_ficMono = [ (data[i] + data[i+1]) // 2 for i in range(0, len(data), 2) ]
+
+    elif canal == 3:
+        data_ficMono = [ (data[i] - data[i+1]) // 2 for i in range(0, len(data), 2) ]
+
+    else:
+        raise ValueError("Debe introduir un canal válido (0 <= canal <= 3).")
+
+    setData(header, data_ficMono, ficMono)
+```
+
 ##### Código de `mono2estereo()`
+
+```python
+def mono2estereo(ficIzq, ficDer, ficEste):
+    if not isinstance(ficIzq, str) and isinstance(ficDer, str) and isinstance(ficEste, str):
+        raise ValueError("Los parámetros deben ser un string con la ruta a los archivos.")
+
+    data_izq, header_izq = getData(ficIzq)
+    data_der, header_der = getData(ficDer)
+
+    
+    if not header_izq[6] == 1 and header_der[6] == 1:
+        raise TypeError("Ambos archivos deden ser monofónicos.")
+
+    data_Este = [valor for tupla in zip(data_izq, data_der) for valor in tupla]
+    
+    setData(header_izq, data_Este, ficEste, mono=False)
+```
 
 ##### Código de `codEstereo()`
 
+```python
+def codEstereo(ficEste, ficCod):
+    data_este, header_este = getData(ficEste)
+
+    if not header_este[6] == 2:
+        raise TypeError("El archivo debe ser estéreo.")
+
+    data_este_sum = [ (data_este[i] + data_este[i+1]) // 2 for i in range(0, len(data_este), 2) ]
+    data_este_sub = [ (data_este[i] - data_este[i+1]) // 2 for i in range(0, len(data_este), 2) ]
+
+    data_cod = [valor for tupla in zip(data_este_sum, data_este_sub) for valor in tupla]
+
+    setData(header_este, data_cod, ficCod, BPSample=32)
+```
+
 ##### Código de `decEstereo()`
+
+```python
+def decEstereo(ficCod, ficEste):
+    data_cod, header_cod = getData(ficCod)
+
+    data_este_L = [data_cod[i] + data_cod[i+1] for i in range(0, len(data_cod), 2) ]
+    data_este_R = [data_cod[i] - data_cod[i+1] for i in range(0, len(data_cod), 2) ]
+
+    # data_este = [valor for tupla in zip(data_este_L, data_este_R) for valor in tupla]   ===> Para no alterar los canales R y L
+    data_este = [valor for tupla in zip(data_este_R, data_este_L) for valor in tupla]   # ===> Para intercambiar canales R y L
+
+    setData(header_cod, data_este, ficEste, mono=False)
+```
 
 #### Subida del resultado al repositorio GitHub y *pull-request*
 

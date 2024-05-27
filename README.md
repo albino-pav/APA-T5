@@ -111,11 +111,14 @@ con una señal monofónica. El tipo concreto de señal que se almacenará en `fi
 - `canal=2`: Se almacena la semisuma $(L+R)/2$. Ha de ser la opción por defecto.
 - `canal=3`: Se almacena la semidiferencia $(L-R)/2$.
 
+
+
 #### Función `mono2estereo(ficIzq, ficDer, ficEste)`
 
 Lee los ficheros `ficIzq` y `ficDer`, que contienen las señales monofónicas correspondientes a los canales
 izquierdo y derecho, respectivamente, y construye con ellas una señal estéreo que almacena en el fichero
 `ficEste`.
+
 
 ### Codificación estéreo usando los bits menos significativos
 
@@ -142,12 +145,16 @@ Lee el fichero \python{ficEste}, que contiene una señal estéreo codificada con
 construye con ellas una señal codificada con 32 bits que permita su reproducción tanto por sistemas
 monofónicos como por sistemas estéreo preparados para ello.
 
+
+
 #### Función `decEstereo(ficCod, ficEste)`
 
 Lee el fichero \python{ficCod} con una señal monofónica de 32 bits en la que los 16 bits más significativos
 contienen la semisuma de los dos canales de una señal estéreo y los 16 bits menos significativos la
 semidiferencia, y escribe el fichero \python{ficEste} con los dos canales por separado en el formato de los
 ficheros WAVE estéreo.
+
+
 
 ### Entrega
 
@@ -189,11 +196,187 @@ pantalla, debe hacerse en formato *markdown*).
 
 ##### Código de `estereo2mono()`
 
+```python
+
+def estereo2mono(input_file_path, output_file_path, channel='L'):
+    """
+    Funció que llegeix un fitxer wave estereo i escriu un fitxer wave mono amb el canal especificat (L, R, +, -), per defecte L
+
+        Args: input_file_path (str): El path del fitxer wave estereo, output_file_path (str): El path del fitxer wave mono, 
+            channel (str): El canal a extreure (L, R, +, -)
+        Returns: None, simplement escriu el fitxer wave mono
+        
+    """
+    wave_file = read_wave_file(input_file_path)
+    
+    # Comprova si el fitxer és estereo
+    if wave_file['num_channels'] != 2:
+        raise ValueError('The input file is not stereo')
+    
+    # Calcula la nova informació de la capçalera
+    new_header = wave_file.copy()
+    new_header['num_channels'] = 1
+    new_header['byte_rate'] = wave_file['byte_rate'] // 2
+    new_header['block_align'] = wave_file['block_align'] // 2
+    new_header['data_size'] = wave_file['data_size'] // 2
+    
+    # Converteix les dades d'àudio a mono
+    mono_audio_data = []
+    for i in range(0, len(wave_file['audio_data']), 2):
+        if channel == 'L':
+            mono_audio_data.append(wave_file['audio_data'][i])
+        elif channel == 'R':
+            mono_audio_data.append(wave_file['audio_data'][i + 1])
+        elif channel == '+':
+            mono_audio_data.append((wave_file['audio_data'][i] + wave_file['audio_data'][i + 1]) // 2 )
+        elif channel == '-':
+            mono_audio_data.append((wave_file['audio_data'][i] - wave_file['audio_data'][i + 1]) // 2 )
+        else:
+            raise ValueError('Invalid channel')
+    
+    # Escriu el nou fitxer wave
+    write_wave_file(output_file_path, new_header, struct.pack('<{}h'.format(len(mono_audio_data)), *mono_audio_data))
+
+```
+
 ##### Código de `mono2estereo()`
+
+
+```python
+
+def mono2estereo(input_file_path1, input_file_path2, output_file_path):
+    """
+    Converteix dos fitxers d'àudio mono en un fitxer d'àudio estèreo.
+
+    Arguments:
+    - input_file_path1 (str): Ruta del primer fitxer d'àudio mono.
+    - input_file_path2 (str): Ruta del segon fitxer d'àudio mono.
+    - output_file_path (str): Ruta del fitxer d'àudio estèreo de sortida.
+
+    Returns:
+    None
+    """
+    # Llegeix els fitxers wave
+    wave_file1 = read_wave_file(input_file_path1)
+    wave_file2 = read_wave_file(input_file_path2)
+    
+    # Comprova si els fitxers són mono
+    if wave_file1['num_channels'] != 1 or wave_file2['num_channels'] != 1:
+        raise ValueError('Els fitxers d\'entrada no són mono')
+    
+    # Calcula la nova informació de la capçalera
+    new_header = wave_file1.copy()
+    new_header['num_channels'] = 2
+    new_header['byte_rate'] = wave_file1['byte_rate'] * 2
+    new_header['block_align'] = wave_file1['block_align'] * 2
+    new_header['data_size'] = wave_file1['data_size'] * 2
+    
+    # Converteix les dades d'àudio a estereo
+    stereo_audio_data = []
+    for i in range(len(wave_file1['audio_data'])):
+        stereo_audio_data.append(wave_file1['audio_data'][i])
+        stereo_audio_data.append(wave_file2['audio_data'][i])
+    
+    # Escriu el nou fitxer wave
+    write_wave_file(output_file_path, new_header, struct.pack('<{}h'.format(len(stereo_audio_data)), *stereo_audio_data))
+
+
+```
 
 ##### Código de `codEstereo()`
 
+```python
+
+def codEstereo(input_file_path, output_file_path):
+    """
+    Converteix un fitxer wave estereo de 16 bits a un fitxer wave de 32 bits amb un únic canal.
+
+    Arguments:
+    - input_file_path (str): Ruta del fitxer wave d'entrada.
+    - output_file_path (str): Ruta del fitxer wave de sortida.
+
+    Returns:
+    None
+    """
+    # Llegeix el fitxer wave
+    wave_file = read_wave_file(input_file_path)
+    
+    # Comprova si el fitxer és estereo
+    if wave_file['num_channels'] != 2:
+        raise ValueError('El fitxer d\'entrada no és estereo')
+    
+    # Comprova si el fitxer és de 16 bits
+    if wave_file['bits_per_sample'] != 16:
+        raise ValueError('El fitxer d\'entrada no és de 16 bits')
+    
+    # Calcula la nova informació de la capçalera, el fitxer de sortida serà de 32 bits però només amb 1 canal
+    new_header = wave_file.copy()
+    new_header['num_channels'] = 1
+    new_header['bits_per_sample'] = 32
+    
+    # Converteix les dades d'àudio a 32 bits
+    audio_data = wave_file['audio_data']
+    data_este_sum = [ round((audio_data[i] + audio_data[i+1]) / 2) for i in range(0,len(audio_data), 2) ]
+    data_este_sub = [ round((audio_data[i] - audio_data[i+1]) / 2) for i in range(0,len(audio_data), 2) ]
+    audio_data = [ (data_este_sub[i] << 16) | (data_este_sum[i] & 0xFFFF) for i in range(len(data_este_sum)) ]
+    
+    # Escriu el nou fitxer wave
+    write_wave_file(output_file_path, new_header, struct.pack('<{}i'.format(len(audio_data)), *audio_data))
+
+
+```
+
 ##### Código de `decEstereo()`
+
+```python
+
+def decEstereo(input_file_path, output_file_path):
+    """
+    Converteix un fitxer wave mono de 32 bits a un fitxer wave estereo de 16 bits.
+
+    Arguments:
+    - input_file_path (str): Ruta del fitxer wave d'entrada.
+    - output_file_path (str): Ruta del fitxer wave de sortida.
+
+    Returns:
+    None
+    """
+    # Llegeix el fitxer wave
+    wave_file = read_wave_file(input_file_path)
+    
+    # Comprova si el fitxer és mono
+    if wave_file['num_channels'] != 1:
+        raise ValueError('El fitxer d\'entrada no és mono')
+    
+    # Comprova si el fitxer és de 32 bits
+    if wave_file['bits_per_sample'] != 32:
+        raise ValueError('El fitxer d\'entrada no és de 32 bits')
+    
+    # Calcula la nova informació de la capçalera, el fitxer de sortida serà estereo de 16 bits
+    new_header = wave_file.copy()
+    new_header['num_channels'] = 2
+    new_header['bits_per_sample'] = 16
+    
+    # Converteix les dades d'àudio a estereo de 16 bits
+    audio_data = wave_file['audio_data']
+    data_este_sub = [ (sample >> 16) for sample in audio_data ]
+    data_este_sum = [ struct.unpack('h', struct.pack('H', sample & 0xFFFF))[0] for sample in audio_data ]
+
+    # Imprimeix els valors màxims i mínims de les dades d'àudio
+
+   
+    # Calcula les dades d'àudio per al canal dret i esquerra
+    right = [data_este_sum - data_este_sub for data_este_sum, data_este_sub in zip(data_este_sum, data_este_sub)]
+    left = [data_este_sum + data_este_sub for data_este_sum, data_este_sub in zip(data_este_sum, data_este_sub)]
+    
+    # Combina les dades d'àudio del canal dret i esquerra en un sol array
+    audio_data = [sample for pair in zip(left, right) for sample in pair]
+    
+    # Escriu el nou fitxer wave
+    write_wave_file(output_file_path, new_header, struct.pack('<{}h'.format(len(audio_data)), *audio_data))
+    
+
+```
 
 #### Subida del resultado al repositorio GitHub y *pull-request*
 

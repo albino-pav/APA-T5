@@ -1,6 +1,6 @@
 # Sonido estéreo y ficheros WAVE
 
-## Nom i cognoms
+## Marti Dominguez
 
 ## El formato WAVE
 

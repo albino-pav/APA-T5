@@ -1,6 +1,6 @@
 # Sonido estéreo y ficheros WAVE
 
-## Nom i cognoms
+## Nom i cognoms: Núria Rodríguez Pardo
 
 ## El formato WAVE
 

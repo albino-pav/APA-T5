@@ -1,6 +1,6 @@
 # Sonido estéreo y ficheros WAVE
 
-## Nom i cognoms
+## Biel Bernal Pratdesaba
 
 ## El formato WAVE
 

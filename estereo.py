@@ -1,7 +1,7 @@
 """   
     Quinta tarea de APA - Sonido estéreo y ficheros WAVE
 
-    Àlex Segura
+    Àlex Segura Medina
 
     Esta tarea consiste en implementar funciones para convertir entre
     ficheros estéreo y mono en formato WAVE, así como para codificar
@@ -64,11 +64,9 @@ def estereo2mono(ficEste, ficMono, canal = 2):
 # Funcion para convertir dos archivos mono a uno estéreo
 def mono2estereo(ficIzq, ficDer, ficEste):
     """
+
     Genera un archivo WAVE estéreo combinando dos archivos WAVE mono.
 
-    Cada archivo debe tener el mismo número de muestras, frecuencia de muestreo
-    y formato (PCM 16-bit). El canal izquierdo se toma de ficIzq y el derecho de ficDer.
-    
     """
     with open(ficIzq, 'rb') as fz:
         header_izq = fz.read(44)
@@ -117,11 +115,9 @@ def codEstereo(ficEste, ficCod):
     """
 
     Lee un fichero estéreo de 16 bits por canal (ficEste) y genera un fichero ficCod
-    de 32 bits por muestra codificando:
-    - Semisuma (L + R) // 2 en los 16 bits más significativos
-    - Semidiferencia (L - R) // 2 en los 16 bits menos significativos
-
+    de 32 bits por muestra.
     El resultado permite ser reproducido como mono (semisuma) o reconstruido como estéreo.
+
     """
     with open(ficEste, 'rb') as f:
         cabecera = f.read(44)
@@ -182,7 +178,6 @@ def codEstereo(ficEste, ficCod):
 # Funcion para decodificar un archivo codificado a estéreo 
 def decEstereo(ficCod, ficEste):
     """
-    decEstereo(ficCod, ficEste)
 
     Decodifica un fichero codificado en 32 bits por muestra (ficCod), donde:
     - Los 16 bits más significativos contienen la semisuma (L + R) // 2
@@ -190,6 +185,7 @@ def decEstereo(ficCod, ficEste):
     para obtener los canales izquierdo y derecho originales.
 
     Guarda el resultado en un fichero estéreo de 16 bits por muestra (ficEste).
+
     """
     with open(ficCod, 'rb') as f:
         cabecera = f.read(44)

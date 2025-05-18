@@ -1,6 +1,6 @@
 # Sonido estéreo y ficheros WAVE
 
-## Nom i cognoms
+## Arnau Piñero Masegosa
 
 ## El formato WAVE
 

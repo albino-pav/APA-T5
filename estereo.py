@@ -3,6 +3,8 @@ Arnau Piñero Masegosa
 
 Este fichero contiene algunas funciones que permiten gestionar los canales de ficheros
 WAVE incluyendo su codificacion y decodificacion.
+
+ADVERTENCIA: Los ficheros de salida no tienen por que sonar bien.
 """
 
 import struct as st
@@ -24,7 +26,7 @@ def estereo2mono(ficEste, ficMono, canal=2):
         headerData = list(st.unpack(formato, datos))
         # chunkID[0], chunkSize[1], format[2], chunk1ID[3], chunk1Size[4], audFormat[5], nChannels[6], sampleRate[7], bitRate[8], bAlign[9], bps[10], chunk2ID[11], fileSize[12]  
         
-        if headerData[0] != b'RIFF' or formato != b'WAVE':
+        if headerData[0] != b'RIFF' or headerData[2] != b'WAVE':
             raise Exception(f'El fichero {ficEste} no tiene formato WAVE.')
         
         with open(ficMono, 'wb') as fpMono:
@@ -56,6 +58,7 @@ def mono2estereo(ficIzq, ficDer, ficEste):
     Esta funcion construye a partir de las señales monofonicas 'ficIzq' (L) y 'ficDer' (R)
     una señal estereo, que se almacena en el fichero 'ficEste'.
     """
+
     with open(ficIzq, 'rb') as fpIzq:
         formato = '<4sI4s4sIHHIIH4sI'
         datos = ficEste.read(st.calcsize(formato))
@@ -91,8 +94,27 @@ def codEstereo(ficEste, ficCod):
     16 bits, y construye una señal codificada con 32 bits que permita su reproduccion tanto en 
     sistemas monofonicos cono en sistemas estero que lo permitan.
     """
-    # 4 bytes de L+R y 4 de L-R
-    ...
+    
+    with open(ficEste, 'rb') as fpEste:
+        # leemos la cabecera
+        formato = '<4sI4s4sIHHIIH4sI'
+        datos = ficEste.read(st.calcsize(formato))
+        headerData = list(st.unpack(formato, datos))
+
+        if headerData[0] != b'RIFF' or headerData[2] != b'WAVE':
+            raise Exception(f'El fichero {ficEste} no tiene formato WAVE.')
+
+        for i in range(0, headerData[12]):
+                L = fpEste.read(2)
+                R = fpEste.read(2)
+
+        semiSum = (L+R)/2
+        semiDif = (L-R)/2
+
+        with open(ficCod, 'wb') as fpCod:
+            for i in range(0, len(semiSum), 2):
+                fpCod.write(semiSum[i], semiSum[i+1])
+                fpCod.write(semiDif[i], semiDif[i+1])
 
 def decEstereo(ficCod, ficEste):
     """
@@ -100,24 +122,25 @@ def decEstereo(ficCod, ficEste):
     16 MSB contienen la semisuma de los canales L y R, y los 16 LSB contienen la semidiferencia
     y escribe en 'ficEste' los dos canales por separado en formato WAVE estereo.
     """
+    
+    with open(ficCod, 'rb') as fpCod:
+        # leemos la cabecera
+        formato = '<4sI4s4sIHHIIH4sI'
+        datos = ficEste.read(st.calcsize(formato))
+        headerData = list(st.unpack(formato, datos))
 
-    ...
+        if headerData[0] != b'RIFF' or headerData[2] != b'WAVE':
+            raise Exception(f'El fichero {ficEste} no tiene formato WAVE.')
+        
+        for i in range(0, headerData[12]):
+            semiSum = fpCod.read(2)
+            semiDif = fpCod.read(2)
+        
+        for i in range(0, len(semiSum)):
+            R = -(4 * semiDif[i] - 4 * semiSum[i]) / 3
+            L = 2 * semiSum[i] + 2 * (semiDif[i] - semiSum[i]) / 3
 
-
-
-#- Es muy recomendable escribir, además, sendas funciones que *empaqueten* 
-# y *desempaqueten* las cabeceras de los ficheros WAVE a partir de los 
-# datos contenidos en ellas.
-
-#- Se deben evitar los bucles. Se valorará el uso, cuando sea necesario, 
-# de *comprensiones*.
-
-#- Los ficheros se deben abrir y cerrar usando gestores de contexto.
-
-#- Las funciones deberán comprobar que los ficheros de entrada tienen el 
-# formato correcto y, en caso contrario, elevar la excepción correspondiente.
-
-#- Los ficheros resultantes deben ser reproducibles correctamente usando
-# cualquier reproductor estándar; por ejemplo, el Windows Media Player 
-# o similar. Es probable, muy probable, que tenga que modificar los de las
-# cabeceras de los ficheros para conseguirlo.
+        with open(ficEste, 'wb') as fpEste:
+            for i in range(0, len(semiSum), 2):
+                fpEste.write(L[i], L[i+1])
+                fpEste.write(R[i], R[i+1])

@@ -1,6 +1,6 @@
 # Sonido estéreo y ficheros WAVE
 
-## Nom i cognoms
+## Alex Carrión González
 
 ## El formato WAVE
 
@@ -190,11 +190,73 @@ pantalla, debe hacerse en formato *markdown*).
 
 ##### Código de `estereo2mono()`
 
+```python
+def estereo2mono(ficEste, ficMono, canal=2):
+    numChannels, SampleRate, BitPerSample, data = leeWave(ficEste)
+    data += (0,)
+    
+    if canal == 0:
+        escrWave(ficMono, numChannels=1, SampleRate=SampleRate, BitsPerSample=BitPerSample, data=data[0::2])
+    
+    elif canal == 1:
+        escrWave(ficMono, numChannels=1, SampleRate=SampleRate, BitsPerSample=BitPerSample, data=data[1::2])
+    
+    elif canal == 2:
+        dataLR = ((dataL + dataR) // 2 for dataL, dataR in zip(data[::2], data[1::2]))
+        escrWave(ficMono, numChannels=1, SampleRate=SampleRate, BitsPerSample=BitPerSample, data=list(dataLR))
+    
+    elif canal == 3:
+        dataLR = ((dataL - dataR) // 2 for dataL, dataR in zip(data[::2], data[1::2]))
+        escrWave(ficMono, numChannels=1, SampleRate=SampleRate, BitsPerSample=BitPerSample, data=list(dataLR))
+```
+
 ##### Código de `mono2estereo()`
+
+```python
+def mono2estereo(ficIzq, ficDer, ficEste):
+numCanalesLeft, SampleRateL, BitPerSampleL, dataL = leeWave(ficIzq)
+    numCanalesRight, SampleRateR, BitPerSampleR, dataR = leeWave(ficDer)
+    data = [data for pair in zip(dataL, dataR) for data in pair]
+
+    escrWave(ficEste, numChannels=2, SampleRate=SampleRateL, BitsPerSample=BitPerSampleL, data=data)
+```
 
 ##### Código de `codEstereo()`
 
+```python
+def codEstereo(ficEste, ficCod):
+numChannels, sampleRate, bitsPerSample, data = leeWave(ficEste)
+    dataCod = []
+    for i in range(0, len(data), 2):
+        dataL = data[i]
+        dataR = data[i + 1]
+        dataSUMA = (dataL + dataR) // 2
+        dataDIF = (dataL - dataR) // 2
+        dataCod.append(dataSUMA)
+        dataCod.append(dataDIF)
+    escrWave(ficCod, numChannels=1, SampleRate=sampleRate, BitsPerSample=32, data=dataCod)
+```
+
 ##### Código de `decEstereo()`
+
+```python
+def decEstereo(ficCod, ficDec):
+numChannels, sampleRate, bitsPerSample, data = leeWave(ficCod)
+    dataL = []
+    dataR = []
+    for i in range(0, len(data), 2):
+        dataSUMA = data[i]
+        dataDIF = data[i + 1]
+        L = (dataSUMA + dataDIF) // 2
+        R = (dataSUMA - dataDIF) // 2
+        dataL.append(L)
+        dataR.append(R)
+    DataALL = []
+    for l, r in zip(dataL, dataR):
+        DataALL.append(l)
+        DataALL.append(r)
+    escrWave(ficDec, numChannels=2, SampleRate=sampleRate, BitsPerSample=16, data=DataALL)
+```
 
 #### Subida del resultado al repositorio GitHub y *pull-request*
 

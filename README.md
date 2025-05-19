@@ -1,6 +1,6 @@
 # Sonido estéreo y ficheros WAVE
 
-## Nom i cognoms
+## Pau Reyes Boix
 
 ## El formato WAVE
 

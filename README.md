@@ -139,13 +139,7 @@ canales izquierdo y derecho.
 #### Función `codEstereo(ficEste, ficCod)`
 
 def codificar_estereo_32bit(fitxer_estereo, fitxer_codificat):
-    """
-    Codifica un fitxer estèreo de 16 bits a mono de 32 bits amb semisuma i semidiferència.
 
-    Paràmetres:
-    - fitxer_estereo: fitxer d'entrada estèreo 16 bits
-    - fitxer_codificat: fitxer mono 32 bits resultant
-    """
     with open(fitxer_estereo, 'rb') as f:
         cap = llegir_capcalera(f)
         if cap['canals'] != 2 or cap['bits'] != 16:
@@ -167,13 +161,7 @@ def codificar_estereo_32bit(fitxer_estereo, fitxer_codificat):
 
 #### Función `decEstereo(ficCod, ficEste)`
 def descodificar_estereo_32bit(fitxer_codificat, fitxer_estereo):
-    """
-    Descodifica un fitxer mono 32 bits en un fitxer estèreo 16 bits original.
 
-    Paràmetres:
-    - fitxer_codificat: fitxer mono 32 bits codificat
-    - fitxer_estereo: fitxer estèreo 16 bits resultant
-    """
     with open(fitxer_codificat, 'rb') as f:
         cap = llegir_capcalera(f)
         if cap['canals'] != 1 or cap['bits'] != 32:
@@ -236,14 +224,7 @@ pantalla, debe hacerse en formato *markdown*).
 
 ##### Código de `estereo2mono()`
 def convertir_estereo_a_mono(fitxer_in, fitxer_out, mode=2):
-    """
-    Converteix un fitxer estèreo de 16 bits a mono segons mode triat.
-
-    Paràmetres:
-    - fitxer_in: ruta del fitxer estèreo original
-    - fitxer_out: ruta del fitxer mono resultant
-    - mode: tipus de conversió (0,1,2,3)
-    """
+  
     with open(fitxer_in, 'rb') as f:
         cap = llegir_capcalera(f)
         if cap['canals'] != 2 or cap['bits'] != 16:
@@ -263,14 +244,7 @@ def convertir_estereo_a_mono(fitxer_in, fitxer_out, mode=2):
 
 ##### Código de `mono2estereo()`
 def combinar_mono_en_estereo(fitxer_L, fitxer_R, fitxer_out):
-    """
-    Combina dos fitxers mono en un estèreo.
 
-    Paràmetres:
-    - fitxer_L: fitxer mono canal esquerre
-    - fitxer_R: fitxer mono canal dret
-    - fitxer_out: fitxer estèreo resultant
-    """
     with open(fitxer_L, 'rb') as fL, open(fitxer_R, 'rb') as fR:
         cap_L = llegir_capcalera(fL)
         cap_R = llegir_capcalera(fR)
@@ -293,13 +267,7 @@ def combinar_mono_en_estereo(fitxer_L, fitxer_R, fitxer_out):
 
 ##### Código de `codEstereo()`
 def codificar_estereo_32bit(fitxer_estereo, fitxer_codificat):
-    """
-    Codifica un fitxer estèreo de 16 bits a mono de 32 bits amb semisuma i semidiferència.
 
-    Paràmetres:
-    - fitxer_estereo: fitxer d'entrada estèreo 16 bits
-    - fitxer_codificat: fitxer mono 32 bits resultant
-    """
     with open(fitxer_estereo, 'rb') as f:
         cap = llegir_capcalera(f)
         if cap['canals'] != 2 or cap['bits'] != 16:
@@ -321,13 +289,7 @@ def codificar_estereo_32bit(fitxer_estereo, fitxer_codificat):
 
 ##### Código de `decEstereo()`
 def descodificar_estereo_32bit(fitxer_codificat, fitxer_estereo):
-    """
-    Descodifica un fitxer mono 32 bits en un fitxer estèreo 16 bits original.
 
-    Paràmetres:
-    - fitxer_codificat: fitxer mono 32 bits codificat
-    - fitxer_estereo: fitxer estèreo 16 bits resultant
-    """
     with open(fitxer_codificat, 'rb') as f:
         cap = llegir_capcalera(f)
         if cap['canals'] != 1 or cap['bits'] != 32:

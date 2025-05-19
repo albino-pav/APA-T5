@@ -1,6 +1,6 @@
 # Sonido estéreo y ficheros WAVE
 
-## Nom i cognoms
+## Pau Reyes Boix
 
 ## El formato WAVE
 
@@ -138,16 +138,50 @@ canales izquierdo y derecho.
 
 #### Función `codEstereo(ficEste, ficCod)`
 
-Lee el fichero `ficEste`, que contiene una señal estéreo codificada con PCM lineal de 16 bits, y
-construye con ellas una señal codificada con 32 bits que permita su reproducción tanto por sistemas
-monofónicos como por sistemas estéreo preparados para ello.
+def codificar_estereo_32bit(fitxer_estereo, fitxer_codificat):
+
+    with open(fitxer_estereo, 'rb') as f:
+        cap = llegir_capcalera(f)
+        if cap['canals'] != 2 or cap['bits'] != 16:
+            raise ValueError("El fitxer ha de ser estèreo de 16 bits")
+        dades = f.read(cap['data_mida'])
+
+    mostres = [struct.unpack('<hh', dades[i:i+4]) for i in range(0, len(dades), 4)]
+    codificades = bytearray()
+
+    for L, R in mostres:
+        S = (L + R) // 2
+        D = (L - R) // 2
+        val = ((S & 0xFFFF) << 16) | (D & 0xFFFF)
+        codificades.extend(struct.pack('<I', val))
+
+    with open(fitxer_codificat, 'wb') as f_out:
+        escriure_capcalera(f_out, 1, cap['freq'], 32, len(codificades))
+        f_out.write(codificades)
 
 #### Función `decEstereo(ficCod, ficEste)`
+def descodificar_estereo_32bit(fitxer_codificat, fitxer_estereo):
 
-Lee el fichero `ficCod` con una señal monofónica de 32 bits en la que los 16 bits más significativos
-contienen la semisuma de los dos canales de una señal estéreo y los 16 bits menos significativos la
-semidiferencia, y escribe el fichero `ficEste` con los dos canales por separado en el formato de los
-ficheros WAVE estéreo.
+    with open(fitxer_codificat, 'rb') as f:
+        cap = llegir_capcalera(f)
+        if cap['canals'] != 1 or cap['bits'] != 32:
+            raise ValueError("Fitxer no vàlid per descodificar")
+        dades = f.read(cap['data_mida'])
+
+    blocs = [struct.unpack('<I', dades[i:i+4])[0] for i in range(0, len(dades), 4)]
+    mostres = []
+
+    for b in blocs:
+        S = b >> 16
+        D = a_signed_16(b & 0xFFFF)
+        L = saturar_16bit(S + D)
+        R = saturar_16bit(S - D)
+        mostres.append(struct.pack('<hh', L, R))
+
+    with open(fitxer_estereo, 'wb') as f_out:
+        escriure_capcalera(f_out, 2, cap['freq'], 16, len(mostres) * 4)
+        f_out.write(b''.join(mostres))
+
 
 ### Entrega
 
@@ -189,12 +223,92 @@ para que se realice el realce sintáctico en Python del mismo (no vale insertar 
 pantalla, debe hacerse en formato *markdown*).
 
 ##### Código de `estereo2mono()`
+def convertir_estereo_a_mono(fitxer_in, fitxer_out, mode=2):
+  
+    with open(fitxer_in, 'rb') as f:
+        cap = llegir_capcalera(f)
+        if cap['canals'] != 2 or cap['bits'] != 16:
+            raise ValueError("Només s'accepten fitxers estèreo de 16 bits")
+        dades = f.read(cap['data_mida'])
+
+    tam = cap['bits'] // 8
+    result = bytearray()
+
+    for i in range(0, len(dades), 2 * tam):
+        mostra = dades[i:i + 2 * tam]
+        result.extend(reduir_mostra(mostra, tam, mode))
+
+    with open(fitxer_out, 'wb') as f_out:
+        escriure_capcalera(f_out, 1, cap['freq'], cap['bits'], len(result))
+        f_out.write(result)
 
 ##### Código de `mono2estereo()`
+def combinar_mono_en_estereo(fitxer_L, fitxer_R, fitxer_out):
+
+    with open(fitxer_L, 'rb') as fL, open(fitxer_R, 'rb') as fR:
+        cap_L = llegir_capcalera(fL)
+        cap_R = llegir_capcalera(fR)
+
+        if cap_L != cap_R:
+            raise ValueError("Els dos fitxers mono han de tenir el mateix format")
+
+        dades_L = fL.read(cap_L['data_mida'])
+        dades_R = fR.read(cap_R['data_mida'])
+
+    tam = cap_L['bits'] // 8
+    mostres = bytearray()
+
+    for i in range(0, len(dades_L), tam):
+        mostres.extend(dades_L[i:i+tam] + dades_R[i:i+tam])
+
+    with open(fitxer_out, 'wb') as f:
+        escriure_capcalera(f, 2, cap_L['freq'], cap_L['bits'], len(mostres))
+        f.write(mostres)
 
 ##### Código de `codEstereo()`
+def codificar_estereo_32bit(fitxer_estereo, fitxer_codificat):
+
+    with open(fitxer_estereo, 'rb') as f:
+        cap = llegir_capcalera(f)
+        if cap['canals'] != 2 or cap['bits'] != 16:
+            raise ValueError("El fitxer ha de ser estèreo de 16 bits")
+        dades = f.read(cap['data_mida'])
+
+    mostres = [struct.unpack('<hh', dades[i:i+4]) for i in range(0, len(dades), 4)]
+    codificades = bytearray()
+
+    for L, R in mostres:
+        S = (L + R) // 2
+        D = (L - R) // 2
+        val = ((S & 0xFFFF) << 16) | (D & 0xFFFF)
+        codificades.extend(struct.pack('<I', val))
+
+    with open(fitxer_codificat, 'wb') as f_out:
+        escriure_capcalera(f_out, 1, cap['freq'], 32, len(codificades))
+        f_out.write(codificades)
 
 ##### Código de `decEstereo()`
+def descodificar_estereo_32bit(fitxer_codificat, fitxer_estereo):
+
+    with open(fitxer_codificat, 'rb') as f:
+        cap = llegir_capcalera(f)
+        if cap['canals'] != 1 or cap['bits'] != 32:
+            raise ValueError("Fitxer no vàlid per descodificar")
+        dades = f.read(cap['data_mida'])
+
+    blocs = [struct.unpack('<I', dades[i:i+4])[0] for i in range(0, len(dades), 4)]
+    mostres = []
+
+    for b in blocs:
+        S = b >> 16
+        D = a_signed_16(b & 0xFFFF)
+        L = saturar_16bit(S + D)
+        R = saturar_16bit(S - D)
+        mostres.append(struct.pack('<hh', L, R))
+
+    with open(fitxer_estereo, 'wb') as f_out:
+        escriure_capcalera(f_out, 2, cap['freq'], 16, len(mostres) * 4)
+        f_out.write(b''.join(mostres))
 
 #### Subida del resultado al repositorio GitHub y *pull-request*
 

@@ -262,30 +262,6 @@ def estereo2mono(ficEste, ficMono, canal=2):
             raise ValueError("Canal inválido.")
         mono.append(m)
 
-    # Crear gráfico
-    tiempo = np.arange(num_samples) / sample_rate
-
-    plt.figure(figsize=(12, 5))
-
-    # Señal estéreo
-    plt.subplot(1, 2, 1)
-    plt.plot(tiempo, L, label='Izquierdo (L)', alpha=0.7, color = 'blue')
-    plt.plot(tiempo, R, label='Derecho (R)', alpha=0.7, color = 'red')
-    plt.title('Señal Estéreo')
-    plt.xlabel('Tiempo [s]')
-    plt.ylabel('Amplitud')
-    plt.legend()
-
-    # Señal mono
-    plt.subplot(1, 2, 2)
-    plt.plot(tiempo, mono, color='magenta')
-    plt.title('Señal Monofónica')
-    plt.xlabel('Tiempo [s]')
-    plt.ylabel('Amplitud')
-
-    plt.tight_layout()
-    plt.show()
-
     # Guardar archivo mono
     muestras_mono = b''.join([st.pack('<h', m) for m in mono])
     subchunk2_size = len(muestras_mono)
@@ -301,30 +277,6 @@ def estereo2mono(ficEste, ficMono, canal=2):
         f.write(fmt)
         f.write(data_header)
         f.write(muestras_mono)
-    
-    # Crear gráfico
-    num_samples = len(data) // 4  # 4 bytes por muestra estéreo (2 bytes L + 2 bytes R)
-    tiempo = np.arange(num_samples) / sample_rate
-
-    plt.figure(figsize=(12, 5))
-    # Señal estéreo
-    plt.subplot(1, 2, 1)
-    plt.plot(tiempo, L, label='Izquierdo (L)', alpha=0.7)
-    plt.plot(tiempo, R, label='Derecho (R)', alpha=0.7)
-    plt.title('Señal Estéreo')
-    plt.xlabel('Tiempo [s]')
-    plt.ylabel('Amplitud')
-    plt.legend()
-
-    # Señal mono
-    plt.subplot(1, 2, 2)
-    plt.plot(tiempo, mono, color='gray')
-    plt.title('Señal Monofónica')
-    plt.xlabel('Tiempo [s]')
-    plt.ylabel('Amplitud')
-
-    plt.tight_layout()
-    plt.show()
 
 ```
 
@@ -393,30 +345,6 @@ def mono2estereo(ficIzq, ficDer, ficEste):
         f.write(st.pack('<4sIHHIIHH', b'fmt ', 16, 1, 2, fs_L, fs_L * 4, 4, 16))
         f.write(st.pack('<4sI', b'data', subchunk2_size))
         f.write(stereo_bytes)
-
-    # Graficar señales
-    plt.figure(figsize=(14, 6))
-
-    plt.subplot(1, 3, 1)
-    plt.plot(tiempo, L, label='Canal Izquierdo', color='blue')
-    plt.title('Mono Izquierdo')
-    plt.xlabel('Tiempo [s]')
-    plt.ylabel('Amplitud')
-
-    plt.subplot(1, 3, 2)
-    plt.plot(tiempo, R, label='Canal Derecho', color='red')
-    plt.title('Mono Derecho')
-    plt.xlabel('Tiempo [s]')
-
-    plt.subplot(1, 3, 3)
-    plt.plot(tiempo, L, label='L', alpha=0.6, color='blue')
-    plt.plot(tiempo, R, label='R', alpha=0.6, color='red')
-    plt.title('Señal Estéreo Combinada')
-    plt.xlabel('Tiempo [s]')
-    plt.legend()
-
-    plt.tight_layout()
-    plt.show()
 ```
 
 ##### Código de `codEstereo()`
@@ -448,22 +376,6 @@ def codEstereo(ficEste, ficCod):
     L = samples[::2]
     R = samples[1::2]
 
-    # Graficar
-    tiempo = np.arange(len(L)) / sample_rate
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
-    plt.plot(tiempo, L, label="Izquierdo", color="blue")
-    plt.xlabel("Tiempo [s]")
-    plt.ylabel("Amplitud")
-    plt.title("Canal Izquierdo")
-
-    plt.subplot(1, 2, 2)
-    plt.plot(tiempo, R, label="Derecho", color="red")
-    plt.xlabel("Tiempo [s]")
-    plt.title("Canal Derecho")
-    plt.tight_layout()
-    plt.show()
-
     # Codificar (L << 16) | R
     codificados = ((L.astype(np.uint32) & 0xFFFF) << 16) | (R.astype(np.uint32) & 0xFFFF)
 
@@ -491,22 +403,6 @@ def decEstereo(ficCod, ficEste, sample_rate=44100):
     # Separar L y R
     L = ((codificados >> 16) & 0xFFFF).astype('<i2')
     R = (codificados & 0xFFFF).astype('<i2')
-
-    # Graficar
-    tiempo = np.arange(len(L)) / sample_rate
-    plt.figure(figsize=(12, 5))
-    plt.subplot(1, 2, 1)
-    plt.plot(tiempo, L, label="Izquierdo", color="blue")
-    plt.xlabel("Tiempo [s]")
-    plt.ylabel("Amplitud")
-    plt.title("Canal Izquierdo (Decodificado)")
-
-    plt.subplot(1, 2, 2)
-    plt.plot(tiempo, R, label="Derecho", color="red")
-    plt.xlabel("Tiempo [s]")
-    plt.title("Canal Derecho (Decodificado)")
-    plt.tight_layout()
-    plt.show()
 
     # Intercalar L y R
     interleaved = np.empty(len(L) * 2, dtype='<i2')

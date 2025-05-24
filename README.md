@@ -1,7 +1,6 @@
 # Sonido estéreo y ficheros WAVE
 
-## Nom i cognoms
-
+## Nom i cognoms: Pol Alaminos Martorell
 ## El formato WAVE
 
 El formato WAVE es uno de los más extendidos para el almacenamiento y transmisión
@@ -138,15 +137,15 @@ canales izquierdo y derecho.
 
 #### Función `codEstereo(ficEste, ficCod)`
 
-Lee el fichero `ficEste`, que contiene una señal estéreo codificada con PCM lineal de 16 bits, y
+Lee el fichero \python{ficEste}, que contiene una señal estéreo codificada con PCM lineal de 16 bits, y
 construye con ellas una señal codificada con 32 bits que permita su reproducción tanto por sistemas
 monofónicos como por sistemas estéreo preparados para ello.
 
 #### Función `decEstereo(ficCod, ficEste)`
 
-Lee el fichero `ficCod` con una señal monofónica de 32 bits en la que los 16 bits más significativos
+Lee el fichero \python{ficCod} con una señal monofónica de 32 bits en la que los 16 bits más significativos
 contienen la semisuma de los dos canales de una señal estéreo y los 16 bits menos significativos la
-semidiferencia, y escribe el fichero `ficEste` con los dos canales por separado en el formato de los
+semidiferencia, y escribe el fichero \python{ficEste} con los dos canales por separado en el formato de los
 ficheros WAVE estéreo.
 
 ### Entrega
@@ -169,8 +168,7 @@ ficheros WAVE estéreo.
   contrario, elevar la excepción correspondiente.
 
 - Los ficheros resultantes deben ser reproducibles correctamente usando cualquier reproductor estándar;
-  por ejemplo, el Windows Media Player o similar. Es probable, muy probable, que tenga que modificar los
-  datos de las cabeceras de los ficheros para conseguirlo.
+  por ejemplo, el Windows Media Player o similar. Es probable, muy probable, que tenga que modificar los  datos de las cabeceras de los ficheros para conseguirlo.
 
 - Se valorará lo pythónico de la solución; en concreto, su claridad y sencillez, y el uso de los estándares
   marcados por PEP-ocho.
@@ -187,14 +185,128 @@ innecesariamente la canción.
 Inserte a continuación el código de los métodos desarrollados en esta tarea, usando los comandos necesarios
 para que se realice el realce sintáctico en Python del mismo (no vale insertar una imagen o una captura de
 pantalla, debe hacerse en formato *markdown*).
+```python
+import struct as st
+
+header_format = "<4sI4s4sIHHIIHH4sI"
+
+
+def read_wave(file):
+    """
+
+    """
+    with open(file, "rb") as file_in:
+
+        header = list(st.unpack(header_format, file_in.read(44)))
+
+        data_format = f'<{len(file_in.read()) // 2}h'
+        file_in.seek(44)
+        
+        data = list(st.unpack(data_format, file_in.read()))
+
+    if not header[0] == b'RIFF' and header[2] == b'WAVE' or header[3] == b'fmt' and header[5] == 1 and header[11] == b'data':
+        raise TypeError("File must be .WAV and have no compresion")
+
+    return data, header
+
+
+def write_wave(file_out, header, data, mono=True, samples=16):
+    """
+
+    """
+    header[6] = 1 if mono else 2
+    header[12] = len(data) * 2
+    header[10] = samples
+
+    header_out = st.pack(header_format, *header)
+
+    data_format = f"<{len(data)}h"
+    data_packed = st.pack(data_format, *data)
+
+    with open(file_out, "wb") as file_out:
+        file_out.write(header_out)
+        file_out.write(data_packed)
+```
 
 ##### Código de `estereo2mono()`
+```python
+def estereo2mono(ficEste, ficMono, canal=2):
+
+    data, header = read_wave(ficEste)
+
+    if not header[6] == 2:
+        raise TypeError("File must be stereo")
+
+    if canal == 0:
+        mono_data = data[0::2]
+
+    elif canal == 1:
+        mono_data = data[1::2]
+
+    elif canal == 2:
+        mono_data = [(data[i] + data[i + 1]) //
+                     2 for i in range(0, len(data), 2)]
+
+    elif canal == 3:
+        mono_data = [(data[i] - data[i + 1]) //
+                     2 for i in range(0, len(data), 2)]
+
+    else:
+        raise ValueError("Invalid channel, submit 0, 1, 2 or 3.")
+
+    write_wave(ficMono, header, data)
+
+```
 
 ##### Código de `mono2estereo()`
+```python
+def mono2estereo(ficIzq, ficDer, ficEste):
+    """
+
+    """
+    data_L, header_L = read_wave(ficIzq)
+    data_R, header_R = read_wave(ficDer)
+
+    if not header_L[6] == 1 and header_R[6] == 1:
+        raise TypeError("")
+
+    stereo_data = [value for tuple in zip(data_L, data_R) for value in tuple]
+
+    write_wave(ficEste, header_L, stereo_data, mono=False)
+```
 
 ##### Código de `codEstereo()`
+```python
+def codEstereo(ficEste, ficCod):
+    """
+
+    """
+    data, header = read_wave(ficCod)
+
+    data_L = [(data[i] + data[i+1]) // 2 for i in range(0, len(data), 2)]
+    data_R = [(data[i] - data[i+1]) // 2 for i in range(0, len(data), 2)]
+    
+    data_out = [value for tuple in zip(data_L, data_R) for value in tuple]
+    
+    write_wave(ficEste, header, data_out, samples=32)
+```
+
 
 ##### Código de `decEstereo()`
+```python
+def decEstereo(ficEste, ficCod):
+    """
+
+    """
+    data, header = read_wave(ficCod)
+
+    data_L = [data[i] + data[i+1] for i in range(0, len(data), 2)]
+    data_R = [data[i] - data[i+1] for i in range(0, len(data), 2)]
+    
+    data_out = [value for tuple in zip(data_L, data_R) for value in tuple]
+    
+    write_wave(ficEste, header, data_out, mono=False)
+```
 
 #### Subida del resultado al repositorio GitHub y *pull-request*
 
